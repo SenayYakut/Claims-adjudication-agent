@@ -1,4 +1,4 @@
-# Claims Adjudication Simulator
+# Meridian
 ### Biopharma Hack Day @ AWS — Problem Statement #4
 
 > **Prior authorization for oncology drugs takes 3–10 days on average. Patients with late-stage cancer don't have that time.**
