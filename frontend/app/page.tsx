@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileSearch, Loader2 } from "lucide-react";
 import type { AdjudicationResult } from "@/lib/types";
 import { CASES, getCase } from "@/lib/fixtures";
 import { AppShell } from "@/components/AppShell";
@@ -10,22 +9,28 @@ import { ReviewQueue } from "@/components/ReviewQueue";
 import { CaseHeader } from "@/components/CaseHeader";
 import { DecisionPanel } from "@/components/DecisionPanel";
 import { RuleChecklist } from "@/components/RuleChecklist";
+import { ProcessingSteps } from "@/components/ProcessingSteps";
 
 type Source = "live" | "cached";
+type Phase = "processing" | "ready";
 
 export default function Page() {
   const [selectedId, setSelectedId] = useState<string | null>(CASES[0]?.caseId ?? null);
   const [result, setResult] = useState<AdjudicationResult | null>(null);
-  const [loading, setLoading] = useState(false);
   const [source, setSource] = useState<Source>("cached");
+  const [phase, setPhase] = useState<Phase>("processing");
+  const [running, setRunning] = useState(false);
+  const [runNonce, setRunNonce] = useState(0);
 
+  // Fetch (live agent, else fixture fallback) whenever the case changes or the
+  // agent is re-run. Result is cleared first so the previous case never lingers.
   useEffect(() => {
     if (!selectedId) {
       setResult(null);
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    setPhase("processing");
     setResult(null);
 
     fetch(`/api/adjudicate?caseId=${encodeURIComponent(selectedId)}`)
@@ -44,15 +49,20 @@ export default function Page() {
         if (cancelled) return;
         setResult(getCase(selectedId) ?? null);
         setSource("cached");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [selectedId]);
+  }, [selectedId, runNonce]);
+
+  // "Run Agent" — re-run the open case (staged processing animation) and pulse
+  // the whole queue. runNonce bump re-triggers the fetch + remounts the steps.
+  function handleRunAgent() {
+    setRunning(true);
+    setRunNonce((n) => n + 1);
+    window.setTimeout(() => setRunning(false), 700 + CASES.length * 550 + 400);
+  }
 
   const headerCase = result ?? (selectedId ? getCase(selectedId) : undefined);
 
@@ -62,69 +72,73 @@ export default function Page() {
         selectedId && headerCase ? (
           <div className="flex items-center justify-between gap-3">
             <Breadcrumb caseName={headerCase.patient.name} onBack={() => setSelectedId(null)} />
-            <SourcePill source={source} loading={loading} />
+            <SourcePill source={source} processing={phase === "processing"} />
           </div>
         ) : null
       }
       sidebar={
-        <ReviewQueue cases={CASES} selectedId={selectedId} onSelect={setSelectedId} />
+        <ReviewQueue
+          cases={CASES}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onRunAgent={handleRunAgent}
+          running={running}
+        />
       }
     >
-      {!selectedId ? (
+      {!selectedId || !headerCase ? (
         <EmptyState />
-      ) : loading || !result ? (
-        <RunningState />
       ) : (
-        // Scan order by visual weight: quiet header -> dominant decision panel -> checklist.
         <div className="flex flex-col gap-6">
-          <CaseHeader result={result} />
-          <DecisionPanel result={result} />
-          <RuleChecklist rules={result.rules} />
+          {/* Quiet context (level 4) — shown throughout */}
+          <CaseHeader result={headerCase} />
+
+          {phase === "processing" ? (
+            <ProcessingSteps
+              key={`${selectedId}-${runNonce}`}
+              onDone={() => setPhase("ready")}
+            />
+          ) : result ? (
+            <>
+              <DecisionPanel result={result} />
+              <RuleChecklist rules={result.rules} />
+            </>
+          ) : (
+            <div className="rounded-lg border border-edge bg-white py-16 text-center text-ink-2">
+              Waiting for the agent…
+            </div>
+          )}
         </div>
       )}
     </AppShell>
   );
 }
 
-function SourcePill({ source, loading }: { source: Source; loading: boolean }) {
-  if (loading) {
+function SourcePill({ source, processing }: { source: Source; processing: boolean }) {
+  if (processing) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-sm border border-edge bg-white px-2.5 py-1 text-xs font-medium text-ink-2">
-        <Loader2 size={12} strokeWidth={2} className="animate-spin" aria-hidden />
+      <span className="rounded-sm border border-edge bg-white px-2.5 py-1 text-xs font-medium text-ink-2">
         Running agent…
       </span>
     );
   }
   if (source === "live") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-sm border border-ok/40 bg-ok-soft px-2.5 py-1 text-xs font-medium text-ok">
-        <span className="h-1.5 w-1.5 rounded-full bg-ok" aria-hidden />
+      <span className="rounded-sm border border-ok/40 bg-ok-soft px-2.5 py-1 text-xs font-medium text-ok">
         Live agent
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-sm border border-edge bg-white px-2.5 py-1 text-xs font-medium text-ink-2">
-      <span className="h-1.5 w-1.5 rounded-full bg-ink-3" aria-hidden />
+    <span className="rounded-sm border border-edge bg-white px-2.5 py-1 text-xs font-medium text-ink-2">
       Cached result
     </span>
   );
 }
 
-function RunningState() {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-edge bg-white py-24 text-center">
-      <Loader2 size={28} strokeWidth={2} className="animate-spin text-brand" aria-hidden />
-      <p className="text-ink-2">Running adjudication…</p>
-      <p className="text-xs text-ink-3">Evaluating coverage rules against the prescription.</p>
-    </div>
-  );
-}
-
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-edge bg-white py-24 text-center">
-      <FileSearch size={28} className="text-ink-3" strokeWidth={1.75} aria-hidden />
+    <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-edge bg-white py-24 text-center">
       <p className="text-ink-2">Select a request from the queue to review.</p>
     </div>
   );

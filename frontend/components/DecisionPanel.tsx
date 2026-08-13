@@ -1,14 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2 } from "lucide-react";
-import type { AdjudicationResult } from "@/lib/types";
+import type { AdjudicationResult, Verdict } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { VerdictBadge } from "@/components/ui/VerdictBadge";
 import { ConfidenceBand } from "@/components/ui/ConfidenceBand";
-import { VERDICT_META, TONE_CLASSES } from "@/lib/format";
+import {
+  VERDICT_META,
+  TONE_CLASSES,
+  confirmConsequences,
+  otherVerdicts,
+} from "@/lib/format";
 
-type ConfirmState = "idle" | "pending" | "confirmed";
+type Mode = "idle" | "confirm" | "override" | "confirmed" | "overridden";
+
+const REVIEWER = "Dr. R. Jain (RJ)";
+
+/** What happens next once a verdict is confirmed, per verdict. */
+const NEXT_PHRASE: Record<Verdict, string> = {
+  APPROVE: "authorization issued",
+  DENY: "prescriber notified",
+  NEEDS_REVIEW: "case held pending data",
+};
 
 /** Drop a trailing period so clauses join cleanly. */
 function stripPeriod(s: string): string {
@@ -46,15 +59,11 @@ function synthesizeReasoning(result: AdjudicationResult): string {
     const pending = [...unsatisfied, ...lowConfidence];
     const names = pending.map((r) => r.ruleName).filter(Boolean);
     if (names.length > 0) {
-      const detail = pending
-        .map((r) => stripPeriod(r.reason))
-        .filter(Boolean);
+      const detail = pending.map((r) => stripPeriod(r.reason)).filter(Boolean);
       const lead = `Routed for review — ${joinClauses(names)} ${
         names.length === 1 ? "is" : "are"
       } unresolved or low-confidence.`;
-      return detail.length > 0
-        ? `${lead} ${joinClauses(detail)}.`
-        : lead;
+      return detail.length > 0 ? `${lead} ${joinClauses(detail)}.` : lead;
     }
     return "Routed for review pending additional data before a final determination.";
   }
@@ -66,21 +75,38 @@ function synthesizeReasoning(result: AdjudicationResult): string {
 }
 
 export function DecisionPanel({ result }: { result: AdjudicationResult }) {
-  const [state, setState] = useState<ConfirmState>("idle");
+  const [mode, setMode] = useState<Mode>("idle");
+  const [overrideVerdict, setOverrideVerdict] = useState<Verdict | null>(null);
+  const [reason, setReason] = useState("");
+  const [decidedAt, setDecidedAt] = useState("");
 
   const meta = VERDICT_META[result.verdict];
   const tone = meta.tone;
   const toneClasses = TONE_CLASSES[tone];
   const reasoning = synthesizeReasoning(result);
 
-  function handleConfirm() {
-    if (state !== "idle") return;
-    setState("pending");
-    setTimeout(() => setState("confirmed"), 900);
+  function stamp() {
+    setDecidedAt(new Date().toLocaleString());
   }
 
-  const isPending = state === "pending";
-  const isConfirmed = state === "confirmed";
+  function resetToIdle() {
+    setMode("idle");
+  }
+
+  function handleConfirmSave() {
+    stamp();
+    setMode("confirmed");
+  }
+
+  function handleSubmitOverride() {
+    if (!overrideVerdict || reason.trim() === "") return;
+    stamp();
+    setMode("overridden");
+  }
+
+  const consequences = confirmConsequences(result);
+  const otherOptions = otherVerdicts(result.verdict);
+  const overrideReady = overrideVerdict !== null && reason.trim() !== "";
 
   return (
     <Card dominant accent={tone} className="p-6">
@@ -109,41 +135,140 @@ export function DecisionPanel({ result }: { result: AdjudicationResult }) {
         <p className="mt-2 text-sm leading-relaxed text-ink-2">{reasoning}</p>
       </div>
 
-      {/* Actions — one primary, one lower-weight secondary */}
-      <div className="mt-6 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={handleConfirm}
-          disabled={isPending || isConfirmed}
-          className={[
-            "inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium",
-            isConfirmed
-              ? "bg-ok text-white"
-              : "bg-brand text-white",
-            isPending || isConfirmed ? "cursor-default opacity-90" : "hover:bg-brand-deep",
-          ].join(" ")}
-        >
-          {isPending && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
-          {isConfirmed && <Check className="h-4 w-4" strokeWidth={2} />}
-          {isPending
-            ? "Confirming…"
-            : isConfirmed
-            ? "Decision confirmed"
-            : "Confirm decision"}
-        </button>
+      {/* Action area — one expansion at a time, verdict stays visible above */}
+      <div className="mt-6">
+        {mode === "idle" && (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMode("confirm")}
+              className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-deep"
+            >
+              Confirm decision
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOverrideVerdict(null);
+                setReason("");
+                setMode("override");
+              }}
+              className="rounded-md border border-edge px-4 py-2 text-sm text-ink-2 hover:bg-canvas"
+            >
+              Override
+            </button>
+          </div>
+        )}
 
-        <button
-          type="button"
-          disabled={isPending || isConfirmed}
-          className={[
-            "rounded-md border border-edge px-4 py-2 text-sm font-normal text-ink-2",
-            isPending || isConfirmed
-              ? "cursor-default opacity-50"
-              : "hover:bg-canvas",
-          ].join(" ")}
-        >
-          Override
-        </button>
+        {mode === "confirm" && (
+          <div className="animate-fade-in">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-3">
+              This will:
+            </p>
+            <ul className="mt-2 space-y-1.5">
+              {consequences.map((line) => (
+                <li key={line} className="text-sm leading-relaxed text-ink-2">
+                  {line}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-5 flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleConfirmSave}
+                className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-deep"
+              >
+                Confirm &amp; save
+              </button>
+              <button
+                type="button"
+                onClick={resetToIdle}
+                className="text-sm text-ink-3 hover:text-ink-2"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mode === "override" && (
+          <div className="animate-fade-in">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-3">
+              Override to:
+            </p>
+            <div className="mt-3 space-y-2">
+              {otherOptions.map((v) => (
+                <label
+                  key={v}
+                  className="flex cursor-pointer items-center gap-2 text-sm text-ink-2"
+                >
+                  <input
+                    type="radio"
+                    name="override-verdict"
+                    value={v}
+                    checked={overrideVerdict === v}
+                    onChange={() => setOverrideVerdict(v)}
+                    className="accent-brand"
+                  />
+                  {VERDICT_META[v].label}
+                </label>
+              ))}
+            </div>
+
+            <div className="mt-4">
+              <label
+                htmlFor="override-reason"
+                className="text-xs font-medium uppercase tracking-wide text-ink-3"
+              >
+                Reason — logged with the case
+              </label>
+              <textarea
+                id="override-reason"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={3}
+                className="mt-2 w-full rounded-md border border-edge bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ink-3 focus:border-brand focus:outline-none"
+              />
+            </div>
+
+            <div className="mt-5 flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleSubmitOverride}
+                disabled={!overrideReady}
+                className={[
+                  "rounded-md px-4 py-2 text-sm font-medium",
+                  overrideReady
+                    ? "bg-brand text-white hover:bg-brand-deep"
+                    : "cursor-not-allowed bg-brand-soft text-ink-3",
+                ].join(" ")}
+              >
+                Submit override
+              </button>
+              <button
+                type="button"
+                onClick={resetToIdle}
+                className="text-sm text-ink-3 hover:text-ink-2"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mode === "confirmed" && (
+          <p className="animate-fade-in text-sm leading-relaxed text-ink-2">
+            {meta.label} confirmed — Reviewed by {REVIEWER} · {decidedAt} ·{" "}
+            {NEXT_PHRASE[result.verdict]}
+          </p>
+        )}
+
+        {mode === "overridden" && overrideVerdict && (
+          <p className="animate-fade-in text-sm leading-relaxed text-ink-2">
+            {VERDICT_META[overrideVerdict].label} — overridden by {REVIEWER} ·{" "}
+            {decidedAt}. Reason: {reason.trim()}
+          </p>
+        )}
       </div>
     </Card>
   );

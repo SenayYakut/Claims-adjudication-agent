@@ -1,4 +1,4 @@
-import type { Verdict } from "@/lib/types";
+import type { AdjudicationResult, Verdict } from "@/lib/types";
 
 export type Band = "Low" | "Med" | "High";
 
@@ -25,6 +25,39 @@ export const VERDICT_META: Record<
   DENY: { label: "Deny", tone: "danger" },
   NEEDS_REVIEW: { label: "Needs Review", tone: "warn" },
 };
+
+/** The two verdicts a reviewer can override TO, given the current verdict. */
+export function otherVerdicts(v: Verdict): Verdict[] {
+  return (["APPROVE", "DENY", "NEEDS_REVIEW"] as Verdict[]).filter((x) => x !== v);
+}
+
+/**
+ * Plain-language "This will:" consequence lines for the Confirm expansion,
+ * specific to the verdict (and urgency).
+ */
+export function confirmConsequences(result: AdjudicationResult): string[] {
+  const expedite = result.urgency === "EXPEDITE";
+  const base: string[] = [];
+  if (result.verdict === "APPROVE") {
+    base.push(
+      "Authorize the requested drug for this patient",
+      "Notify the prescriber's office of the approval",
+    );
+  } else if (result.verdict === "DENY") {
+    base.push(
+      "Record the denial against the cited coverage rule",
+      "Notify the prescriber's office with the denial reason and covered alternatives",
+    );
+  } else {
+    base.push(
+      "Keep the case open pending the missing data",
+      "Notify the prescriber's office of the outstanding items",
+    );
+  }
+  base.push("Log this review under the reviewer's name");
+  if (expedite) base.push("Keep Expedite handling active on this case");
+  return base;
+}
 
 /** Tailwind class bundles per tone — keeps the color vocabulary controlled. */
 export const TONE_CLASSES: Record<

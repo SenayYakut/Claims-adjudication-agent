@@ -48,6 +48,26 @@ const config: Config = {
       boxShadow: {
         panel: "0 10px 30px -12px rgba(56, 70, 168, 0.22)",
       },
+      keyframes: {
+        "dot-pulse": {
+          "0%,100%": { opacity: "0.25" },
+          "50%": { opacity: "1" },
+        },
+        "step-in": {
+          "0%": { opacity: "0", transform: "translateY(4px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+      },
+      animation: {
+        // stagger the three dots via inline animationDelay
+        "dot-pulse": "dot-pulse 1.1s ease-in-out infinite",
+        "step-in": "step-in 0.35s ease-out both",
+        "fade-in": "fade-in 0.4s ease-out both",
+      },
       spacing: {
         "1": "4px",
         "2": "8px",

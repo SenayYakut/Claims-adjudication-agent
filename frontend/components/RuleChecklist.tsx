@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Check, ChevronRight, X } from "lucide-react";
 import type { RuleEvaluation } from "@/lib/types";
 import { isFlagged } from "@/lib/format";
 import { ConfidenceBand } from "@/components/ui/ConfidenceBand";
 import { Card } from "@/components/ui/Card";
 
 /**
- * The core hierarchy rule of the review surface: rules that pass cleanly
- * collapse into one quiet line, while flagged rules (unsatisfied OR
- * low-confidence) stay expanded so the reviewer sees exactly what needs a
- * human. Flagged rules read at level 2 (left-border accent + soft tint, no
- * shadow — quieter than the decision panel, louder than everything else).
+ * The core hierarchy rule of the review surface (spec rules 2, 6, 7): rules
+ * that pass cleanly collapse into one quiet disclosure line, while flagged
+ * rules (unsatisfied OR low-confidence) stay expanded so the reviewer sees
+ * exactly what needs a human. Flagged rules read at level 2 — a colored left
+ * bar + soft row tint, no shadow (quieter than the decision panel, louder than
+ * everything else). No icons anywhere: colored bars + text pills only.
  */
 export function RuleChecklist({ rules }: { rules: RuleEvaluation[] }) {
   const [showPassed, setShowPassed] = useState(false);
@@ -38,37 +38,16 @@ export function RuleChecklist({ rules }: { rules: RuleEvaluation[] }) {
             type="button"
             onClick={() => setShowPassed((v) => !v)}
             aria-expanded={showPassed}
-            className="flex w-full items-center gap-2 rounded-sm py-1 text-left text-sm text-ink-2"
+            className="w-full rounded-sm py-1 text-left text-sm text-ink-2"
           >
-            <Check size={15} strokeWidth={2} className="text-ok" aria-hidden />
-            <span>
-              {passed.length} of {rules.length} rules satisfied
-            </span>
-            <ChevronRight
-              size={14}
-              strokeWidth={2}
-              aria-hidden
-              className={`ml-auto text-ink-3 transition-transform ${
-                showPassed ? "rotate-90" : ""
-              }`}
-            />
+            {passed.length} of {rules.length} rules satisfied —{" "}
+            {showPassed ? "hide details" : "show details"}
           </button>
 
           {showPassed && (
-            <ul className="mt-1 flex flex-col gap-0.5 pl-1">
+            <ul className="mt-1 flex flex-col gap-1">
               {passed.map((rule) => (
-                <li
-                  key={rule.ruleName}
-                  className="flex items-center gap-2 py-0.5 text-sm text-ink-2"
-                >
-                  <Check
-                    size={13}
-                    strokeWidth={2}
-                    className="text-ok"
-                    aria-hidden
-                  />
-                  <span>{rule.ruleName}</span>
-                </li>
+                <SatisfiedRule key={rule.ruleName} rule={rule} />
               ))}
             </ul>
           )}
@@ -78,47 +57,63 @@ export function RuleChecklist({ rules }: { rules: RuleEvaluation[] }) {
   );
 }
 
+/**
+ * Spec rule 7: DENY and NEEDS_REVIEW are not the same kind of "not satisfied."
+ * A confident, definitive failure (hard clinical mismatch — the wrong drug for
+ * this genotype) reads red with "Does not qualify" copy. A rule stuck at low
+ * confidence because data hasn't resulted yet reads amber with provisional
+ * "Pending data" copy. Both use a left bar; the distinction is carried in the
+ * copy and the color.
+ */
 function FlaggedRule({ rule }: { rule: RuleEvaluation }) {
-  // Red is reserved for a confident denial (a real, high-confidence failure).
-  // Low-confidence / pending rules read amber ("needs review"), not red ("denied").
   const hardFail = !rule.satisfied && rule.confidence >= 0.7;
-  const accent = hardFail
-    ? "border-l-danger bg-danger-soft"
-    : "border-l-warn bg-warn-soft";
+
+  const bar = hardFail ? "bg-danger" : "bg-warn";
+  const tint = hardFail ? "bg-danger-soft" : "bg-warn-soft";
+  const pillClass = hardFail
+    ? "text-danger bg-danger-soft border border-danger/40"
+    : "text-warn bg-warn-soft border border-warn/40";
+  const pillLabel = hardFail ? "Does not qualify" : "Pending data";
 
   return (
-    <li className={`rounded-sm border-l-2 ${accent} px-3 py-2`}>
-      <div className="flex items-start gap-2">
-        {hardFail ? (
-          <X
-            size={15}
-            strokeWidth={2}
-            className="mt-0.5 shrink-0 text-danger"
-            aria-hidden
-          />
-        ) : (
-          <AlertTriangle
-            size={15}
-            strokeWidth={2}
-            className="mt-0.5 shrink-0 text-warn"
-            aria-hidden
-          />
-        )}
+    <li className={`flex gap-2 rounded-sm ${tint} px-3 py-2`}>
+      <span className={`w-[3px] self-stretch rounded-full ${bar}`} aria-hidden />
 
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-medium text-ink">{rule.ruleName}</span>
-            <ConfidenceBand confidence={rule.confidence} showLabel={false} />
-          </div>
-
-          <div className="text-sm">
-            <span className="text-ink-3">Evidence</span>{" "}
-            <span className="text-ink">{rule.evidence}</span>
-          </div>
-
-          <p className="text-sm text-ink-2">{rule.reason}</p>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-medium text-ink">{rule.ruleName}</span>
+          <span
+            className={`inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium ${pillClass}`}
+          >
+            {pillLabel}
+          </span>
+          <ConfidenceBand confidence={rule.confidence} showLabel={false} />
         </div>
+
+        <div className="text-sm">
+          <span className="text-ink-3">Evidence</span>{" "}
+          <span className="text-ink">{rule.evidence}</span>
+        </div>
+
+        <p className="text-sm text-ink-2">{rule.reason}</p>
       </div>
+    </li>
+  );
+}
+
+/**
+ * Quiet satisfied row revealed by the disclosure toggle: a green left bar, the
+ * rule name, and the word "Satisfied" in place of a confidence label. Kept
+ * deliberately low-key — not celebratory (spec rule 2).
+ */
+function SatisfiedRule({ rule }: { rule: RuleEvaluation }) {
+  return (
+    <li className="flex items-center gap-2 rounded-sm px-3 py-1.5">
+      <span className="w-[3px] self-stretch rounded-full bg-ok" aria-hidden />
+      <span className="min-w-0 flex-1 truncate text-sm text-ink-2">
+        {rule.ruleName}
+      </span>
+      <span className="text-xs text-ok">Satisfied</span>
     </li>
   );
 }
