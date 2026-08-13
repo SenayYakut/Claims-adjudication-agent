@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Meridian tokens — exact spec names, mirrored by tailwind.config.ts */
+  --blue: #4c5fd5;
+  --blue-deep: #3846a8;
+  --blue-soft: #eef1fc;
+  --green: #2e9e5b;
+  --green-soft: #e8f8ee;
+  --amber: #c08a2e;
+  --amber-soft: #fbf1df;
+  --red: #d2564b;
+  --red-soft: #fcebea;
+  --ink: #22263a;
+  --ink-secondary: #6c7086;
+  --ink-tertiary: #9b9eb3;
+  --border: #e7e8f2;
+  --surface-alt: #f7f8fd;
+  --radius-lg: 15px;
+  --radius-md: 11px;
+  --radius-sm: 8px;
+}
+
+html,
+body {
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Poppins tops out at 600 — never bold anywhere. */
+* {
+  font-weight: inherit;
+}
