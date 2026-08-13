@@ -7,6 +7,7 @@ ALL patient data is 100% SYNTHETIC. No real patient information used anywhere.
 # All criteria met: Stage IV, PD-L1 high, EGFR/ALK wild-type, ECOG 1, treatment-naive
 CASE_1_APPROVE = {
     "patient_id": "SYN-PA-001",
+    "patient_name": "Robert Chen",
     "patient_demographics": {
         "age": 65,
         "sex": "Male",
@@ -61,6 +62,7 @@ CASE_1_APPROVE = {
 # standard of care is an EGFR TKI (osimertinib). Coverage policy explicitly excludes this.
 CASE_2_DENY = {
     "patient_id": "SYN-PA-002",
+    "patient_name": "Maria Alvarez",
     "patient_demographics": {
         "age": 52,
         "sex": "Female",
@@ -116,6 +118,7 @@ CASE_2_DENY = {
 # rules. Rapid symptom progression and ECOG 2 → EXPEDITE urgency.
 CASE_3_NEEDS_REVIEW = {
     "patient_id": "SYN-PA-003",
+    "patient_name": "James Whitfield",
     "patient_demographics": {
         "age": 71,
         "sex": "Male",

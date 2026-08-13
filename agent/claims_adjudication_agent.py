@@ -94,11 +94,17 @@ Initial auth period: 6 months; renewal requires documented response/stability.
 # Module-level session state — reset between claims
 # ─────────────────────────────────────────────────────────────────────────────
 _rule_evaluations: list[dict] = []
+# Captured during a run so the JSON wrapper can surface them (additive telemetry
+# only — these do not affect the decision logic).
+_last_urgency: dict | None = None
+_last_policy_source: str = "fallback"
 
 
 def _reset_session():
-    global _rule_evaluations
+    global _rule_evaluations, _last_urgency, _last_policy_source
     _rule_evaluations = []
+    _last_urgency = None
+    _last_policy_source = "fallback"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -142,11 +148,14 @@ def fetch_coverage_policy(drug_name: str, policy_url: str) -> str:
             # Trim to stay within context window
             policy_text = f"[LIVE POLICY — fetched from {policy_url}]\n\n{text[:8000]}"
             logger.info("Live policy fetched successfully (%d chars).", len(policy_text))
+            global _last_policy_source
+            _last_policy_source = "live"
             return policy_text
         except Exception as exc:
             logger.warning("Bright Data fetch failed (%s). Using fallback policy.", exc)
 
     logger.info("Using hardcoded fallback policy for %s.", drug_name)
+    _last_policy_source = "fallback"
     return f"[FALLBACK POLICY — {drug_name}]\n\n{FALLBACK_POLICY}"
 
 
@@ -273,6 +282,8 @@ def assess_clinical_urgency(
         "cancer_stage": cancer_stage,
     }
     logger.info("Clinical Urgency: %s", urgency)
+    global _last_urgency
+    _last_urgency = result
     return json.dumps(result)
 
 

@@ -1,4 +1,3 @@
-import { Info } from "lucide-react";
 import type { AdjudicationResult } from "@/lib/types";
 import { UrgencyBadge } from "@/components/ui/UrgencyBadge";
 
@@ -6,7 +5,7 @@ import { UrgencyBadge } from "@/components/ui/UrgencyBadge";
  * QUIET CONTEXT (level 4). Small, top, low weight — no shadow, no card border
  * emphasis. Identifies the case so the reviewer knows who and what they're
  * looking at, then gets out of the way. The one noticeable element is the amber
- * EXPEDITE badge, since urgency changes how the case is handled.
+ * EXPEDITE badge, since urgency changes how the case is handled. No icons.
  */
 export function CaseHeader({ result }: { result: AdjudicationResult }) {
   const isExpedite = result.urgency === "EXPEDITE";
@@ -18,10 +17,7 @@ export function CaseHeader({ result }: { result: AdjudicationResult }) {
         <span className="font-medium text-ink">{result.patient.name}</span>
         <span className="text-xs text-ink-3">{result.patient.id}</span>
         {isExpedite && (
-          <span
-            className="inline-flex items-center gap-1"
-            title={result.urgencyReason}
-          >
+          <span className="inline-flex flex-wrap items-center gap-2">
             <UrgencyBadge urgency={result.urgency} />
             {result.urgencyReason && (
               <span className="text-xs text-ink-2">{result.urgencyReason}</span>
@@ -37,12 +33,9 @@ export function CaseHeader({ result }: { result: AdjudicationResult }) {
       </div>
 
       {isFallback && (
-        <div className="inline-flex items-center gap-2 self-start rounded-sm border border-edge bg-canvas px-2.5 py-1 text-xs text-ink-2">
-          <Info size={13} strokeWidth={2} aria-hidden />
-          <span>
-            Live policy lookup unavailable — running on cached coverage criteria.
-          </span>
-        </div>
+        <span className="self-start rounded-sm border border-edge bg-white px-2.5 py-1 text-xs text-ink-2">
+          Live policy lookup unavailable — running on cached coverage criteria.
+        </span>
       )}
     </header>
   );
