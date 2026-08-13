@@ -10,6 +10,11 @@ import { VERDICT_META, TONE_CLASSES } from "@/lib/format";
 
 type ConfirmState = "idle" | "pending" | "confirmed";
 
+/** Drop a trailing period so clauses join cleanly. */
+function stripPeriod(s: string): string {
+  return s.replace(/\.\s*$/, "").trim();
+}
+
 /** Join a list of clauses into readable prose (a, b, and c). */
 function joinClauses(clauses: string[]): string {
   if (clauses.length === 0) return "";
@@ -30,9 +35,9 @@ function synthesizeReasoning(result: AdjudicationResult): string {
   const satisfied = rules.filter((r) => r.satisfied);
 
   if (result.verdict === "DENY") {
-    const reasons = unsatisfied.map((r) => r.reason).filter(Boolean);
+    const reasons = unsatisfied.map((r) => stripPeriod(r.reason)).filter(Boolean);
     if (reasons.length > 0) {
-      return `Denied: ${joinClauses(reasons)}`;
+      return `Denied: ${joinClauses(reasons)}.`;
     }
     return "Denied because one or more coverage criteria were not satisfied.";
   }
@@ -42,7 +47,7 @@ function synthesizeReasoning(result: AdjudicationResult): string {
     const names = pending.map((r) => r.ruleName).filter(Boolean);
     if (names.length > 0) {
       const detail = pending
-        .map((r) => r.reason)
+        .map((r) => stripPeriod(r.reason))
         .filter(Boolean);
       const lead = `Routed for review — ${joinClauses(names)} ${
         names.length === 1 ? "is" : "are"

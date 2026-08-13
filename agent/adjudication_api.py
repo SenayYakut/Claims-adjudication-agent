@@ -108,22 +108,55 @@ def adjudicate_structured(prescription: dict, policy_url: str = "") -> dict:
 
     rules = list(core._rule_evaluations)
 
-    # Recover the urgency assessment from the recorded run if available;
-    # fall back to a STANDARD stub if the agent did not surface it.
+    # Recover the urgency assessment captured during the run; fall back to a
+    # STANDARD stub if the agent did not surface it.
     urgency = getattr(core, "_last_urgency", None) or {
         "urgency_level": "STANDARD",
         "clinical_rationale": None,
     }
 
-    policy_source = "fallback"  # live-vs-fallback is decided inside fetch_coverage_policy
+    policy_source = getattr(core, "_last_policy_source", "fallback")
     return build_result(prescription, rules, urgency, policy_source)
 
 
-if __name__ == "__main__":
+# ─────────────────────────────────────────────────────────────────────────────
+# CLI — used by the frontend's /api/adjudicate route to run one case live.
+# Emits exactly one machine-readable line so the caller can parse stdout even if
+# the agent SDK prints other chatter:
+#   RESULT_JSON:{...}     on success
+#   RESULT_ERROR:<msg>    on failure (exit code 1)
+# ─────────────────────────────────────────────────────────────────────────────
+def _load_case(index: int) -> dict:
     import os
     import sys
 
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-    from data.synthetic_cases import CASE_1_APPROVE
+    from data.synthetic_cases import ALL_CASES
 
-    print(json.dumps(adjudicate_structured(CASE_1_APPROVE), indent=2))
+    if index < 1 or index > len(ALL_CASES):
+        raise ValueError(f"case index {index} out of range (1..{len(ALL_CASES)})")
+    _label, prescription = ALL_CASES[index - 1]
+    return prescription
+
+
+def main() -> None:
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(description="Run one synthetic case live and emit JSON.")
+    parser.add_argument("--case", type=int, required=True, help="Case number (1, 2, or 3)")
+    parser.add_argument("--policy-url", default="", help="Optional live policy URL")
+    args = parser.parse_args()
+
+    try:
+        prescription = _load_case(args.case)
+        result = adjudicate_structured(prescription, policy_url=args.policy_url)
+        # Single compact line, prefixed so the Node caller can extract it.
+        print("RESULT_JSON:" + json.dumps(result, separators=(",", ":")))
+    except Exception as exc:  # noqa: BLE001 — surface any failure to the caller
+        print("RESULT_ERROR:" + str(exc), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

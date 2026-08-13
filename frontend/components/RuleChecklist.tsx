@@ -79,15 +79,17 @@ export function RuleChecklist({ rules }: { rules: RuleEvaluation[] }) {
 }
 
 function FlaggedRule({ rule }: { rule: RuleEvaluation }) {
-  const unsatisfied = !rule.satisfied;
-  const accent = unsatisfied
+  // Red is reserved for a confident denial (a real, high-confidence failure).
+  // Low-confidence / pending rules read amber ("needs review"), not red ("denied").
+  const hardFail = !rule.satisfied && rule.confidence >= 0.7;
+  const accent = hardFail
     ? "border-l-danger bg-danger-soft"
     : "border-l-warn bg-warn-soft";
 
   return (
     <li className={`rounded-sm border-l-2 ${accent} px-3 py-2`}>
       <div className="flex items-start gap-2">
-        {unsatisfied ? (
+        {hardFail ? (
           <X
             size={15}
             strokeWidth={2}
