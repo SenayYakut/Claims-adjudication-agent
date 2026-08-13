@@ -12,7 +12,7 @@ export function TopNav() {
       <div className="mx-auto flex h-14 max-w-[1240px] items-center gap-6 px-6">
         <div className="flex items-center gap-2">
           <span
-            className="flex h-[22px] w-[22px] items-center justify-center rounded-sm bg-brand text-xs font-semibold text-white"
+            className="flex h-[22px] w-[22px] items-center justify-center rounded-sm border border-brand bg-white text-xs font-semibold text-brand"
             aria-hidden
           >
             M
@@ -23,7 +23,7 @@ export function TopNav() {
         <nav className="flex items-center gap-1 text-sm">
           <span
             aria-current="page"
-            className="rounded-sm bg-brand-soft px-3 py-1.5 font-medium text-brand-deep"
+            className="rounded-sm border border-brand/50 bg-white px-3 py-1.5 font-medium text-brand-deep"
           >
             Queue
           </span>
@@ -43,7 +43,7 @@ export function TopNav() {
 
         <div className="ml-auto flex items-center">
           <span
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-soft text-sm font-medium text-brand-deep"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-brand/40 bg-white text-sm font-medium text-brand-deep"
             aria-label="Reviewer"
           >
             RJ

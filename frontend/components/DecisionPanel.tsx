@@ -227,7 +227,7 @@ export function DecisionPanel({ result }: { result: AdjudicationResult }) {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
-                className="mt-2 w-full rounded-md border border-edge bg-canvas px-3 py-2 text-sm text-ink placeholder:text-ink-3 focus:border-brand focus:outline-none"
+                className="mt-2 w-full rounded-md border border-edge bg-white px-3 py-2 text-sm text-ink placeholder:text-ink-3 focus:border-brand focus:outline-none"
               />
             </div>
 
@@ -240,7 +240,7 @@ export function DecisionPanel({ result }: { result: AdjudicationResult }) {
                   "rounded-md px-4 py-2 text-sm font-medium",
                   overrideReady
                     ? "bg-brand text-white hover:bg-brand-deep"
-                    : "cursor-not-allowed bg-brand-soft text-ink-3",
+                    : "cursor-not-allowed border border-edge bg-white text-ink-3",
                 ].join(" ")}
               >
                 Submit override

@@ -62,12 +62,20 @@ export function confirmConsequences(result: AdjudicationResult): string[] {
 /** Tailwind class bundles per tone — keeps the color vocabulary controlled. */
 export const TONE_CLASSES: Record<
   "ok" | "warn" | "danger" | "brand",
-  { text: string; bg: string; border: string; solidText: string; solidBg: string }
+  {
+    text: string;
+    bg: string;
+    border: string;
+    borderStrong: string;
+    solidText: string;
+    solidBg: string;
+  }
 > = {
   ok: {
     text: "text-ok",
     bg: "bg-ok-soft",
     border: "border-ok/40",
+    borderStrong: "border-ok",
     solidText: "text-white",
     solidBg: "bg-ok",
   },
@@ -75,6 +83,7 @@ export const TONE_CLASSES: Record<
     text: "text-warn",
     bg: "bg-warn-soft",
     border: "border-warn/40",
+    borderStrong: "border-warn",
     solidText: "text-white",
     solidBg: "bg-warn",
   },
@@ -82,6 +91,7 @@ export const TONE_CLASSES: Record<
     text: "text-danger",
     bg: "bg-danger-soft",
     border: "border-danger/40",
+    borderStrong: "border-danger",
     solidText: "text-white",
     solidBg: "bg-danger",
   },
@@ -89,6 +99,7 @@ export const TONE_CLASSES: Record<
     text: "text-brand-deep",
     bg: "bg-brand-soft",
     border: "border-brand/40",
+    borderStrong: "border-brand",
     solidText: "text-white",
     solidBg: "bg-brand",
   },

@@ -69,7 +69,7 @@ export function ReviewQueue({
           type="button"
           onClick={onRunAgent}
           disabled={running}
-          className="rounded-sm bg-brand-soft px-3 py-1.5 text-sm font-medium text-brand-deep disabled:opacity-60"
+          className="rounded-sm border border-brand/50 bg-white px-3 py-1.5 text-sm font-medium text-brand-deep hover:border-brand disabled:opacity-60"
         >
           Run Agent
         </button>
@@ -92,7 +92,7 @@ export function ReviewQueue({
                 }`}
               >
                 <span
-                  className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-brand-soft text-xs font-medium text-brand-deep"
+                  className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full border border-brand/40 bg-white text-xs font-medium text-brand-deep"
                   aria-hidden
                 >
                   {initials(c.patient.name)}
@@ -107,7 +107,7 @@ export function ReviewQueue({
 
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {rowRunning ? (
-                    <span className="inline-flex items-center rounded-sm bg-brand-soft px-3 py-1 text-sm font-medium text-brand">
+                    <span className="inline-flex items-center rounded-sm border border-brand/50 bg-white px-3 py-1 text-sm font-medium text-brand">
                       Running…
                     </span>
                   ) : (

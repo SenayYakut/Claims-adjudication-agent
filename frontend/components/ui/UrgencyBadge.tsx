@@ -15,14 +15,14 @@ export function UrgencyBadge({
   if (urgency === "STANDARD") {
     if (hideStandard) return null;
     return (
-      <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-medium text-ink-2 bg-canvas border border-edge">
+      <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-medium text-ink-2 bg-white border border-edge">
         Standard
       </span>
     );
   }
 
   return (
-    <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-medium text-warn bg-warn-soft border border-warn/40">
+    <span className="inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-medium text-warn bg-white border border-warn/50">
       Expedite
     </span>
   );

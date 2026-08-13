@@ -1,9 +1,9 @@
 import { confidenceBand, type Band } from "@/lib/format";
 
 const BAND_CLASSES: Record<Band, string> = {
-  High: "text-ok bg-ok-soft border-ok/40",
-  Med: "text-warn bg-warn-soft border-warn/40",
-  Low: "text-warn bg-warn-soft border-warn/40",
+  High: "text-ok bg-white border-ok/50",
+  Med: "text-warn bg-white border-warn/50",
+  Low: "text-warn bg-white border-warn/50",
 };
 
 /**

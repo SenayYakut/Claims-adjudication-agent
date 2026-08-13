@@ -38,10 +38,10 @@ export function RuleChecklist({ rules }: { rules: RuleEvaluation[] }) {
             type="button"
             onClick={() => setShowPassed((v) => !v)}
             aria-expanded={showPassed}
-            className="w-full rounded-sm py-1 text-left text-sm text-ink-2"
+            className="inline-flex items-center rounded-sm border border-edge bg-white px-3 py-1.5 text-sm font-medium text-ink-2 hover:border-brand/40"
           >
-            {passed.length} of {rules.length} rules satisfied —{" "}
-            {showPassed ? "hide details" : "show details"}
+            {passed.length} of {rules.length} satisfied ·{" "}
+            {showPassed ? "Hide details" : "Show details"}
           </button>
 
           {showPassed && (
@@ -69,14 +69,14 @@ function FlaggedRule({ rule }: { rule: RuleEvaluation }) {
   const hardFail = !rule.satisfied && rule.confidence >= 0.7;
 
   const bar = hardFail ? "bg-danger" : "bg-warn";
-  const tint = hardFail ? "bg-danger-soft" : "bg-warn-soft";
+  const rowBorder = hardFail ? "border-danger/40" : "border-warn/40";
   const pillClass = hardFail
-    ? "text-danger bg-danger-soft border border-danger/40"
-    : "text-warn bg-warn-soft border border-warn/40";
+    ? "text-danger bg-white border border-danger/50"
+    : "text-warn bg-white border border-warn/50";
   const pillLabel = hardFail ? "Does not qualify" : "Pending data";
 
   return (
-    <li className={`flex gap-2 rounded-sm ${tint} px-3 py-2`}>
+    <li className={`flex gap-2 rounded-sm border ${rowBorder} bg-white px-3 py-2`}>
       <span className={`w-[3px] self-stretch rounded-full ${bar}`} aria-hidden />
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">

@@ -124,7 +124,7 @@ function SourcePill({ source, processing }: { source: Source; processing: boolea
   }
   if (source === "live") {
     return (
-      <span className="rounded-sm border border-ok/40 bg-ok-soft px-2.5 py-1 text-xs font-medium text-ok">
+      <span className="rounded-sm border border-ok/50 bg-white px-2.5 py-1 text-xs font-medium text-ok">
         Live agent
       </span>
     );

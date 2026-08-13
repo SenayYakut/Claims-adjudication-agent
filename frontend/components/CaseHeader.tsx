@@ -33,7 +33,7 @@ export function CaseHeader({ result }: { result: AdjudicationResult }) {
       </div>
 
       {isFallback && (
-        <span className="self-start rounded-sm border border-edge bg-canvas px-2.5 py-1 text-xs text-ink-2">
+        <span className="self-start rounded-sm border border-edge bg-white px-2.5 py-1 text-xs text-ink-2">
           Live policy lookup unavailable — running on cached coverage criteria.
         </span>
       )}
